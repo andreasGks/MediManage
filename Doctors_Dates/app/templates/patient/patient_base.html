@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Base</title>
+</head>
+<body>
+    <h1>Welcome, {{ patient['first_name'] }} {{ patient['last_name'] }}</h1>
+    <p>Email: {{ patient['email'] }}</p>
+    <p>AMKA: {{ patient['amka'] }}</p>
+    <p>Birth Date: {{ patient['birth_date'] }}</p>
+    <p>Username: {{ patient['username'] }}</p>
+
+    <ul>
+        <li><a href="{{ url_for('main.logout_patient') }}">Έξοδος από το Σύστημα (Logout)</a></li>
+        <li><a href="#">Αναζήτηση & Κράτηση Μελλοντικού Ραντεβού (Search & Book Future Appointment)</a></li>
+        <li><a href="#">Προβολή των Μελλοντικών Ραντεβού (View Future Appointments)</a></li>
+        <li><a href="#">Προβολή ενός Μελλοντικού Ραντεβού (View a Future Appointment)</a></li>
+        <li><a href="#">Ακύρωση ενός Μελλοντικού Ραντεβού (Cancel a Future Appointment)</a></li>
+    </ul>
+</body>
+</html>

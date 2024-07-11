@@ -1,0 +1,32 @@
+{% extends 'patient_base.html' %}
+
+{% block content %}
+    <div class="container">
+        <h2>Schedule Appointment</h2>
+        <form method="POST">
+            <!-- CSRF Token for security -->
+            {{ form.csrf_token }}
+
+            <!-- Doctor Selection -->
+            <div class="form-group">
+                {{ form.doctor.label(class="form-control-label") }}
+                {{ form.doctor(class="form-control") }}
+            </div>
+
+            <!-- Appointment Date -->
+            <div class="form-group">
+                {{ form.appointment_date.label(class="form-control-label") }}
+                {{ form.appointment_date(class="form-control") }}
+            </div>
+
+            <!-- Appointment Time -->
+            <div class="form-group">
+                {{ form.appointment_time.label(class="form-control-label") }}
+                {{ form.appointment_time(class="form-control") }}
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary">Schedule Appointment</button>
+        </form>
+    </div>
+{% endblock %}

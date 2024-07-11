@@ -1,0 +1,45 @@
+{% extends 'doctor_base.html' %}
+
+{% block title %}View Doctors{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <h1>Doctors List</h1>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col">
+        <table class="table">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Specialty</th>
+                    <th scope="col">Contact</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doctor in doctors %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <td>{{ doctor.name }}</td>
+                    <td>{{ doctor.specialty }}</td>
+                    <td>{{ doctor.contact }}</td>
+                    <td>
+                        <a href="{{ url_for('schedule_appointment', doctor_id=doctor.id) }}" class="btn btn-primary">Schedule Appointment</a>
+                        <!-- Add other actions as needed -->
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No doctors available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

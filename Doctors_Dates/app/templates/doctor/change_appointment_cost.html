@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Appointment Cost</title>
+</head>
+<body>
+    <h1>Change Appointment Cost</h1>
+    <form method="POST" action="/doctor/change_appointment_cost">
+        <label for="new_cost">New Appointment Cost:</label>
+        <input type="number" id="new_cost" name="new_cost" required><br><br>
+
+        <input type="submit" value="Change Cost">
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <a href="{{ url_for('main.doctor_base') }}">Back to Main Menu</a>
+</body>
+</html>

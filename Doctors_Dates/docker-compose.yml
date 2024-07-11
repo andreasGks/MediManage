@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  flask_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doctors_dates-web
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/HospitalDB
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo
+    container_name: doctors_dates-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Base</title>
+</head>
+<body>
+    <h1>Welcome Admin!</h1>
+    <p>This is the admin base where you can manage doctors and patients.</p>
+    <ul>
+        <li><a href="/admin/create_doctor">Create Doctor</a></li>
+        <li><a href="/admin/change_doctor_password">Change Doctor Password</a></li>
+        <li><a href="/admin/delete_doctor">Delete Doctor</a></li>
+        <li><a href="/admin/delete_patient">Delete Patient</a></li>
+        <li><a href="{{ url_for('main.logout') }}">Logout</a></li>
+    </ul>
+</body>
+</html>
