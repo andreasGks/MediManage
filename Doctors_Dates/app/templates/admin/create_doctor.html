@@ -1,3 +1,4 @@
+<!-- create_doctor.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -49,19 +50,48 @@
             to {bottom: 0; opacity: 0;}
         }
     </style>
-
 </head>
 <body>
     <h2>Create a New Doctor</h2>
-    <form method="POST">
-        <label for="doctor_name">Doctor's Name:</label>
-        <input type="text" id="doctor_name" name="doctor_name" required>
+    <form id="createDoctorForm" method="POST">
+        <label for="first_name">First Name:</label>
+        <input type="text" id="first_name" name="first_name" required>
         <br><br>
-        <!-- Add more fields as needed for creating a doctor -->
+
+        <label for="last_name">Last Name:</label>
+        <input type="text" id="last_name" name="last_name" required>
+        <br><br>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <br><br>
+
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <br><br>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <br><br>
+
+        <label for="appointment_cost">Appointment Cost:</label>
+        <input type="number" id="appointment_cost" name="appointment_cost" required>
+        <br><br>
+
+        <label for="specialization">Specialization:</label>
+        <select id="specialization" name="specialization" required>
+            <option value="Ακτινολόγος">Ακτινολόγος</option>
+            <option value="Αιματολόγος">Αιματολόγος</option>
+            <option value="Αλλεργιολόγος">Αλλεργιολόγος</option>
+            <option value="Παθολόγος">Παθολόγος</option>
+            <option value="Καρδιολόγος">Καρδιολόγος</option>
+        </select>
+        <br><br>
+        
         <button type="submit">Create Doctor</button>
     </form>
     <br>
-    <a href="/admin/admin_base">Back to Admin Base</a>
+    <a href="{{ url_for('main.admin_base') }}">Back to Admin Base</a>
 
     <!-- Toast notification -->
     <div id="toast" class="toast">
@@ -83,6 +113,26 @@
         if (window.location.search.includes('success=true')) {
             showToast();
         }
+
+        // Handle form submission
+        document.getElementById('createDoctorForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting normally
+
+            // Perform form submission via AJAX for asynchronous handling (optional)
+            var formData = new FormData(this);
+
+            fetch('/admin/create_doctor', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    showToast(); // Display toast on successful submission
+                    this.reset(); // Reset form fields
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
     </script>
 </body>
 </html>

@@ -3,7 +3,6 @@ import os
 from pymongo import MongoClient
 from .routes import main
 
-
 def create_app():
     
     app = Flask(__name__)

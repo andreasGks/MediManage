@@ -1,8 +1,10 @@
-from flask  import Blueprint, render_template, request, session,render_template,redirect,url_for,session
+from flask  import Blueprint, render_template, request, session,render_template,redirect,url_for,session,flash
 from pymongo import MongoClient
 from .models import Doctor 
 from bson.objectid import ObjectId
 import os
+from .models import Doctor
+from werkzeug.security import generate_password_hash, check_password_hash
 
 main = Blueprint('main', __name__)
 
@@ -115,20 +117,48 @@ def logout():
 # CREATE DOCTOR
 @main.route('/admin/create_doctor', methods=['GET', 'POST'])
 def create_doctor():
-    if request.method == 'POST':
-        # Process form data to create a new doctor
-        doctor_name = request.form.get('doctor_name')
-        # Redirect to create doctor with success flag
+    if not session.get('logged_in'):
+        return redirect(url_for('main.login'))
 
-        doctor_document = {
-            'name': doctor_name,
-            'specialty': 'Cardiology',
-            'hospital': 'General Hospital'
+    if request.method == 'POST':
+        # Fetch form data
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        appointment_cost = request.form.get('appointment_cost')
+        specialization = request.form.get('specialization')
+
+        # Validate specialization
+        valid_specializations = ['Ακτινολόγος', 'Αιματολόγος', 'Αλλεργιολόγος', 'Παθολόγος', 'Καρδιολόγος']
+        if specialization not in valid_specializations:
+            flash('Invalid specialization selected.')
+            return redirect(url_for('main.create_doctor'))
+
+        # Hash the password
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+
+        # Insert into database
+        doctor = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'email': email,
+            'username': username,
+            'password': hashed_password,
+            'appointment_cost': appointment_cost,
+            'specialization': specialization
         }
-        doctors_collection.insert_one(doctor_document)
-        return redirect('/admin/create_doctor?success=true')
+        doctors_collection.insert_one(doctor)
+
+        flash('Doctor created successfully!', 'success')
+        return redirect(url_for('main.create_doctor'))
 
     return render_template('admin/create_doctor.html')
+
+
+
+
 
 
 # CHANGE DOCTOR PASSWORD
@@ -144,21 +174,25 @@ def change_doctor_password():
         # Update the doctor's password in the database
         result = doctors_collection.update_one(
             {'username': doctor_username},
-            {'$set': {'password': new_password}}
+            {'$set': {'password': generate_password_hash(new_password, method='pbkdf2:sha256')}}
         )
 
-        if result.matched_count > 0:
-            flash('Password updated successfully for doctor: {}'.format(doctor_username))
+        if result.modified_count > 0:
+            flash('Password updated successfully for doctor: {}'.format(doctor_username), 'success')
         else:
-            flash('Doctor with username: {} not found'.format(doctor_username))
+            flash('Doctor with username: {} not found or password unchanged'.format(doctor_username), 'error')
 
-        return redirect(url_for('main.admin_base'))
+        # Redirect to the same page to show the result and clear the form
+        return redirect(url_for('main.change_doctor_password'))
 
     return render_template('admin/change_doctor_password.html')
 
 
 
-# DELETE DOCTOR ACCOUNT
+
+
+
+# DELETE DOCTOR
 @main.route('/admin/delete_doctor', methods=['GET', 'POST'])
 def delete_doctor():
     if not session.get('logged_in'):
@@ -167,20 +201,34 @@ def delete_doctor():
     if request.method == 'POST':
         doctor_username = request.form.get('doctor_username')
 
-        # Delete the doctor's appointments
-        appointments_result = appointments_collection.delete_many({'doctor_username': doctor_username})
+        if doctor_username:
+            doctor = doctors_collection.find_one({'username': doctor_username})
 
-        # Delete the doctor from the database
-        doctor_result = doctors_collection.delete_one({'username': doctor_username})
+            if doctor:
+                # Delete the doctor's appointments
+                appointments_result = appointments_collection.delete_many({'doctor_username': doctor_username})
+                print(f"Appointments deleted count: {appointments_result.deleted_count}")
 
-        if doctor_result.deleted_count > 0:
-            flash('Doctor and their appointments deleted successfully: {}'.format(doctor_username))
+                # Delete the doctor from the database
+                doctor_result = doctors_collection.delete_one({'username': doctor_username})
+                print(f"Doctor deleted count: {doctor_result.deleted_count}")
+
+                if doctor_result.deleted_count > 0:
+                    flash(f'Doctor {doctor_username} and their appointments deleted successfully!', 'success')
+                else:
+                    flash(f'Error deleting doctor with username: {doctor_username}', 'error')
+            else:
+                flash(f'Doctor with username: {doctor_username} not found', 'error')
         else:
-            flash('Doctor with username: {} not found'.format(doctor_username))
+            flash('Doctor username not provided', 'error')
 
-        return redirect(url_for('main.admin_base'))
+        return redirect(url_for('main.delete_doctor'))
 
     return render_template('admin/delete_doctor.html')
+
+
+
+
 
 # DELETE PATIENT
 @main.route('/admin/delete_patient')
@@ -263,6 +311,12 @@ def logout_doctor():
 
 
 
+
+
+
+
+
+
 # DOCTOR CHANGE PASSWORD
 @main.route('/doctor/change_password', methods=['GET', 'POST'])
 def change_password():
@@ -270,11 +324,14 @@ def change_password():
         return redirect(url_for('main.login_doctor'))
 
     if request.method == 'POST':
-        current_password = request.form['current_password']
-        new_password = request.form['new_password']
-        confirm_password = request.form['confirm_password']
+        doctor_username = request.form.get('doctor_name')
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
 
-        doctor_username = session['doctor_username']
+        if not (doctor_username and current_password and new_password):
+            flash('Please fill in all fields.', 'error')
+            return redirect(url_for('main.change_password'))
+
         doctor = Doctor.find_by_username(doctor_username)
 
         if not doctor:
@@ -285,16 +342,53 @@ def change_password():
             flash('Current password is incorrect.', 'error')
             return redirect(url_for('main.change_password'))
 
-        if new_password != confirm_password:
-            flash('New passwords do not match.', 'error')
-            return redirect(url_for('main.change_password'))
-
         # Update the doctor's password
         Doctor.change_password(doctor_username, new_password)
         flash('Password changed successfully.', 'success')
         return redirect(url_for('main.doctor_base'))
 
     return render_template('doctor/change_password.html')
+
+
+
+
+
+
+
+
+
+# # DOCTOR CHANGE PASSWORD
+# @main.route('/doctor/change_password', methods=['GET', 'POST'])
+# def change_password():
+#     if not session.get('doctor_logged_in'):
+#         return redirect(url_for('main.login_doctor'))
+
+#     if request.method == 'POST':
+#         current_password = request.form['current_password']
+#         new_password = request.form['new_password']
+#         confirm_password = request.form['confirm_password']
+
+#         doctor_username = session['doctor_username']
+#         doctor = Doctor.find_by_username(doctor_username)
+
+#         if not doctor:
+#             flash('Doctor not found.', 'error')
+#             return redirect(url_for('main.change_password'))
+
+#         if doctor['password'] != current_password:
+#             flash('Current password is incorrect.', 'error')
+#             return redirect(url_for('main.change_password'))
+
+#         if new_password != confirm_password:
+#             flash('New passwords do not match.', 'error')
+#             return redirect(url_for('main.change_password'))
+
+#         # Update the doctor's password
+#         Doctor.change_password(doctor_username, new_password)
+#         flash('Password changed successfully.', 'success')
+#         return redirect(url_for('main.doctor_base'))
+
+#     return render_template('doctor/change_password.html')
 
 
 

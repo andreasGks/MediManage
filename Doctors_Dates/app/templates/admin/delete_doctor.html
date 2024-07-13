@@ -1,9 +1,55 @@
+<!-- delete_doctor.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Delete Doctor Account</title>
+    <style>
+        /* Toast styling */
+        .toast {
+            visibility: hidden;
+            max-width: 50px;
+            height: 50px;
+            margin-left: -125px;
+            margin: auto;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+            white-space: nowrap;
+        }
+        .toast #desc {
+            color: #fff;
+        }
+        .toast.show {
+            visibility: visible;
+            max-width: 100%;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        @-webkit-keyframes fadein {
+            from {bottom: 0; opacity: 0;} 
+            to {bottom: 30px; opacity: 1;}
+        }
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+        @-webkit-keyframes fadeout {
+            from {bottom: 30px; opacity: 1;} 
+            to {bottom: 0; opacity: 0;}
+        }
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+    </style>
 </head>
 <body>
     <h1>Delete Doctor Account</h1>
@@ -13,14 +59,36 @@
         <br>
         <button type="submit">Delete Doctor</button>
     </form>
+    <br>
+    <a href="/admin/admin_base">Back to Admin Base</a>
+
+    <!-- Flash messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
             </ul>
         {% endif %}
     {% endwith %}
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast">
+        <div id="desc">Doctor deleted successfully!</div>
+    </div>
+
+    <script>
+        function showToast() {
+            var toast = document.getElementById("toast");
+            toast.className = "toast show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        // Check if the page was reloaded after form submission
+        if (window.location.search.includes('success=true')) {
+            showToast();
+        }
+    </script>
 </body>
 </html>
