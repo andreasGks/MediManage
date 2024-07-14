@@ -3,7 +3,8 @@ from pymongo import MongoClient
 from .models import Doctor 
 from bson.objectid import ObjectId
 import os
-from .models import Doctor
+from .models import Doctor,Patient
+
 from werkzeug.security import generate_password_hash, check_password_hash
 
 main = Blueprint('main', __name__)
@@ -261,8 +262,23 @@ def delete_patient():
 
 
 
-                        #######  DOCTOR  ######
-                        ######  DOCTOR  ######
+
+
+
+
+
+
+                        #######  DOCTOR  #######
+                        #######  DOCTOR  #######
+                        #######  DOCTOR  #######
+                        #######  DOCTOR  #######
+
+
+
+
+
+
+
 
 
 
@@ -317,35 +333,42 @@ def logout_doctor():
 
 
 
-# DOCTOR CHANGE PASSWORD
 @main.route('/doctor/change_password', methods=['GET', 'POST'])
 def change_password():
     if not session.get('doctor_logged_in'):
         return redirect(url_for('main.login_doctor'))
 
     if request.method == 'POST':
-        doctor_username = request.form.get('doctor_name')
+        doctor_username = session['doctor_username']
         current_password = request.form.get('current_password')
         new_password = request.form.get('new_password')
 
-        if not (doctor_username and current_password and new_password):
+        # Validate input
+        if not (current_password and new_password):
             flash('Please fill in all fields.', 'error')
             return redirect(url_for('main.change_password'))
 
+        # Retrieve doctor from database
         doctor = Doctor.find_by_username(doctor_username)
 
         if not doctor:
             flash('Doctor not found.', 'error')
             return redirect(url_for('main.change_password'))
 
-        if doctor['password'] != current_password:
+        # Verify current password
+        if not check_password_hash(doctor['password'], current_password):
             flash('Current password is incorrect.', 'error')
             return redirect(url_for('main.change_password'))
 
-        # Update the doctor's password
-        Doctor.change_password(doctor_username, new_password)
-        flash('Password changed successfully.', 'success')
-        return redirect(url_for('main.doctor_base'))
+        # Update password
+        result = Doctor.change_password(doctor_username, new_password)
+
+        if result:
+            flash('Password changed successfully.', 'success')
+            return redirect(url_for('main.change_password', success=True))
+        else:
+            flash('Failed to change password.', 'error')
+            return redirect(url_for('main.change_password'))
 
     return render_template('doctor/change_password.html')
 
@@ -393,16 +416,20 @@ def change_password():
 
 
 
-# CHANGE APPOINTMENT COST
+
+
+
+
+
+
+
+
+
 @main.route('/doctor/change_appointment_cost', methods=['GET', 'POST'])
 def change_appointment_cost():
     if request.method == 'POST':
+        doctor_username = request.form.get('doctor_username')
         new_cost = request.form.get('new_cost')
-        
-        # Ensure the user is logged in and get the doctor's username from the session
-        if 'doctor_username' not in session:
-            flash('You need to log in first.', 'error')
-            return redirect(url_for('main.login_doctor'))
 
         # Validate the new cost
         try:
@@ -413,16 +440,72 @@ def change_appointment_cost():
             flash('Invalid cost value.', 'error')
             return redirect(url_for('main.change_appointment_cost'))
 
-        # Get the doctor's username from the session
-        doctor_username = session.get('doctor_username')
+        # Check if the doctor exists
+        doctor = Doctor.find_by_username(doctor_username)
+        if not doctor:
+            flash(f"Doctor with username '{doctor_username}' does not exist.", 'error')
+            return redirect(url_for('main.change_appointment_cost'))
 
-        # Update the doctor's appointment cost in the database
-        Doctor.update_appointment_cost(doctor_username, new_cost)
-        
-        flash('Appointment cost updated successfully.', 'success')
+        # Update the appointment cost
+        result = Doctor.update_appointment_cost(doctor_username, new_cost)
+        if result > 0:
+            flash('Appointment cost updated successfully.', 'success')
+        else:
+            flash('Failed to update appointment cost.', 'error')
+
         return redirect(url_for('main.doctor_base'))
 
+    # For GET requests or when there's an error, render the form
     return render_template('doctor/change_appointment_cost.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# # CHANGE APPOINTMENT COST
+# @main.route('/doctor/change_appointment_cost', methods=['GET', 'POST'])
+# def change_appointment_cost():
+#     if request.method == 'POST':
+#         new_cost = request.form.get('new_cost')
+        
+#         # Ensure the user is logged in and get the doctor's username from the session
+#         if 'doctor_username' not in session:
+#             flash('You need to log in first.', 'error')
+#             return redirect(url_for('main.login_doctor'))
+
+#         # Validate the new cost
+#         try:
+#             new_cost = float(new_cost)
+#             if new_cost < 0:
+#                 raise ValueError("Cost cannot be negative")
+#         except ValueError as e:
+#             flash('Invalid cost value.', 'error')
+#             return redirect(url_for('main.change_appointment_cost'))
+
+#         # Get the doctor's username from the session
+#         doctor_username = session.get('doctor_username')
+
+#         # Update the doctor's appointment cost in the database
+#         Doctor.update_appointment_cost(doctor_username, new_cost)
+        
+#         flash('Appointment cost updated successfully.', 'success')
+#         return redirect(url_for('main.doctor_base'))
+
+#     return render_template('doctor/change_appointment_cost.html')
 
 
 
@@ -460,16 +543,19 @@ def view_future_appointments():
 
 
 
-# PATIENT OPTION PAGE
-@main.route('/patient_options')
+@main.route('/patient/patient_options')
 def patient_options():
-    return render_template('patient_options.html')
+    return render_template('/patient/patient_options.html')
 
 
-#REGISTER PATIENT
+
+
+
+
 @main.route('/patient/register_patient', methods=['GET', 'POST'])
 def register_patient():
     if request.method == 'POST':
+        # Get form data
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         email = request.form.get('email')
@@ -478,50 +564,121 @@ def register_patient():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Create a new patient instance
-        new_patient = Patient(first_name, last_name, email, amka, birth_date, username, password)
+        # Validate form data (add more validation as per your requirements)
+        if not all([first_name, last_name, email, amka, birth_date, username, password]):
+            flash('All fields are required.', 'error')
+            return redirect(url_for('main.register_patient'))
 
-        # Attempt to register the patient
-        success, message = new_patient.register()
+        # Check if username already exists
+        if patients_collection.find_one({'username': username}):
+            flash('Username already exists. Please choose a different username.', 'error')
+            return redirect(url_for('main.register_patient'))
 
-        if success:
-            flash(message, 'success')
-            return redirect(url_for('main.login_patient'))
-        else:
-            flash(message, 'error')
+        # Hash the password
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
-    return render_template('patient/patient_login.html')
+        # Insert into database
+        new_patient = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'email': email,
+            'amka': amka,
+            'birth_date': birth_date,
+            'username': username,
+            'password': hashed_password
+        }
+        patients_collection.insert_one(new_patient)
+
+        flash('Registration successful. You can now login.', 'success')
+    
+        
+        return redirect(url_for('main.login_patient'))
+
+    return render_template('patient/patient_register.html')
+
+
+
+
+
 
 
 # LOGIN PATIENT
-@main.route('/patient_login', methods=['GET', 'POST'])
+@main.route('/patient/login_patient', methods=['GET', 'POST'])
 def login_patient():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        patient = Patient()
-        login_successful, message = patient.login(username, password)
+        # Validate credentials
+        patient = Patient.find_by_username(username)
 
-        if login_successful:
+        if patient and check_password_hash(patient['password'], password):
             session['patient_logged_in'] = True
             session['patient_username'] = username
             return redirect(url_for('main.patient_base'))
         else:
-            return render_template('patient/patient_login.html', error=True, message=message)
+            flash('Invalid username or password.', 'error')
 
-    return render_template('patient/patient_login.html', error=False)
+    return render_template('patient/patient_login.html')
+
+
+
+
+
+
+
+
+# # LOGIN PATIENT
+# @main.route('/patient/login_patient', methods=['GET', 'POST'])
+# def login_patient():
+#     if request.method == 'POST':
+#         # Get form data
+#         username = request.form['username']
+#         password = request.form['password']
+
+#         # Validate credentials
+#         patient = Patient()
+#         login_successful, message = patient.login(username, password)
+
+#         if login_successful:
+#             session['patient_logged_in'] = True
+#             session['patient_username'] = username
+#             flash(message, 'success')
+
+#             return redirect(url_for('main.patient_base'))
+#         else:
+#             flash(message, 'error')
+
+#     return render_template('patient/patient_login.html')
+
+
+
 
 # PATIENT BASE
 @main.route('/patient/patient_base')
 def patient_base():
     if not session.get('patient_logged_in'):
+        flash('You must be logged in to access the patient base.', 'error')
         return redirect(url_for('main.login_patient'))
 
     patient_username = session['patient_username']
     patient = Patient.find_by_username(patient_username)
 
     return render_template('patient_base.html', patient=patient)
+
+
+
+
+# # PATIENT BASE
+# @main.route('/patient/patient_base')
+# def patient_base():
+#     if not session.get('patient_logged_in'):
+#         return redirect(url_for('main.login_patient'))
+
+#     patient_username = session['patient_username']
+#     patient = Patient.find_by_username(patient_username)
+
+#     return render_template('patient_base.html', patient=patient)
 
 # PATIENT LOGOUT
 @main.route('/patient/logout')

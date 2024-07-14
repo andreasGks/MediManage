@@ -1,3 +1,4 @@
+<!-- change_appointment_cost.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,9 @@
 <body>
     <h1>Change Appointment Cost</h1>
     <form method="POST" action="/doctor/change_appointment_cost">
+        <label for="doctor_username">Doctor Username:</label>
+        <input type="text" id="doctor_username" name="doctor_username" required><br><br>
+
         <label for="new_cost">New Appointment Cost:</label>
         <input type="number" id="new_cost" name="new_cost" required><br><br>
 

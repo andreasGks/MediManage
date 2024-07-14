@@ -4,35 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Registration</title>
+    <!-- Include CSS for toast notification -->
+    <style>
+        .toast {
+            visibility: hidden;
+            max-width: 50px;
+            height: 50px;
+            margin-left: -125px;
+            margin: auto;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+            white-space: nowrap;
+        }
+        .toast #desc {
+            color: #fff;
+        }
+        .toast.show {
+            visibility: visible;
+            max-width: 100%;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        @-webkit-keyframes fadein {
+            from {bottom: 0; opacity: 0;} 
+            to {bottom: 30px; opacity: 1;}
+        }
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+        @-webkit-keyframes fadeout {
+            from {bottom: 30px; opacity: 1;} 
+            to {bottom: 0; opacity: 0;}
+        }
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+    </style>
 </head>
 <body>
-    <h1>Patient Registration</h1>
+    <h2>Patient Registration</h2>
 
-    <form method="POST" action="/register_patient">
+    <form id="patientRegistrationForm" method="POST" action="{{ url_for('main.register_patient') }}">
         <label for="first_name">First Name:</label>
-        <input type="text" id="first_name" name="first_name" required><br><br>
+        <input type="text" id="first_name" name="first_name" required>
+        <br><br>
 
         <label for="last_name">Last Name:</label>
-        <input type="text" id="last_name" name="last_name" required><br><br>
+        <input type="text" id="last_name" name="last_name" required>
+        <br><br>
 
         <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required><br><br>
+        <input type="email" id="email" name="email" required>
+        <br><br>
 
         <label for="amka">AMKA:</label>
-        <input type="text" id="amka" name="amka" required><br><br>
+        <input type="text" id="amka" name="amka" required>
+        <br><br>
 
         <label for="birth_date">Birth Date:</label>
-        <input type="date" id="birth_date" name="birth_date" required><br><br>
+        <input type="date" id="birth_date" name="birth_date" required>
+        <br><br>
 
         <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
+        <input type="text" id="username" name="username" required>
+        <br><br>
 
         <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
+        <input type="password" id="password" name="password" required>
+        <br><br>
 
         <input type="submit" value="Register">
     </form>
 
     <a href="{{ url_for('main.login_patient') }}">Back to Patient Login</a>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast">
+        <div id="desc"></div>
+    </div>
+
+    <!-- JavaScript for toast notification -->
+    <script>
+        function showToast(message, type) {
+            var toast = document.getElementById("toast");
+            toast.className = "toast show " + type;
+            toast.querySelector("#desc").innerHTML = message;
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        // Check if the page was reloaded after form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.search.includes('success=true')) {
+                showToast("Registration successful. You can now login.", "success");
+            } else if (window.location.search.includes('error=true')) {
+                showToast("Registration failed. Please try again.", "error");
+            }
+        });
+    </script>
 </body>
 </html>

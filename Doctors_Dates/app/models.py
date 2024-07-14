@@ -1,9 +1,12 @@
 import datetime
 from pymongo import MongoClient
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class MongoDB:
     client = MongoClient("mongodb://mongo:27017/")
     db = client.HospitalDB
+    doctors_collection = db['doctors']
+    patients_collection = db['patients']
 
 class Doctor:
     collection = MongoDB.db.doctors
@@ -49,9 +52,18 @@ class Doctor:
         })
 
 
+    # @staticmethod
+    # def change_password(username, new_password):
+    #     Doctor.collection.update_one({'username': username}, {'$set': {'password': new_password}})
+    
     @staticmethod
     def change_password(username, new_password):
-        Doctor.collection.update_one({'username': username}, {'$set': {'password': new_password}})
+        hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
+        result = MongoDB.doctors_collection.update_one(
+            {'username': username},
+            {'$set': {'password': hashed_password}}
+        )
+        return result.modified_count
 
     @staticmethod
     def delete(username):
@@ -59,7 +71,14 @@ class Doctor:
 
     @staticmethod
     def find_by_username(username):
-        return Doctor.collection.find_one({'username': username})
+        print(f"Searching for doctor with username: {username}")
+        doctor = Doctor.collection.find_one({'username': username})
+        if doctor:
+            print(f"Doctor found: {doctor}")
+        else:
+            print(f"No doctor found with username: {username}")
+        return doctor
+
 
     @staticmethod
     def get_appointments(username):
@@ -67,11 +86,23 @@ class Doctor:
 
     @staticmethod
     def update_appointment_cost(username, new_cost):
-        Doctor.collection.update_one({'username': username}, {'$set': {'appointment_cost': new_cost}})
+        try:
+            result = Doctor.collection.update_one(
+                {'username': username},
+                {'$set': {'appointment_cost': new_cost}}
+            )
+            if result.matched_count == 0:
+                raise ValueError(f"No doctor found with username '{username}'")
+
+            return result.modified_count
+        except Exception as e:
+            print(f"Error updating appointment cost: {e}")
+            return 0
 
 
 class Patient:
     collection = MongoDB.db.patients
+
 
     def __init__(self, first_name, last_name, email, amka, birth_date, username, password):
         self.first_name = first_name
@@ -112,9 +143,24 @@ class Patient:
     def logout(self):
         self.logged_in = False
 
+
+
     @staticmethod
     def find_by_username(username):
-        return Patient.collection.find_one({'username': username})
+        print(f"Searching for patient with username: {username}")
+        patient = Patient.collection.find_one({'username': username})
+        if patient:
+            print(f"Patient found: {patient}")
+        else:
+            print(f"No patient found with username: {username}")
+        return patient
+
+
+
+
+    # @staticmethod
+    # def find_by_username(username):
+    #     ?return Patient.collection.find_one({'username': username})
 
     @staticmethod
     def find_by_email(email):
